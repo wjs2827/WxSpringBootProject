@@ -37,8 +37,8 @@
 
 这个项目并未涉及到分布式相关，我的下一个学习计划就是学习分布式相关，学长建议我实现 RPC 框架，或许到时候回来重构项目，希望你我一起努力。
 
-- [小程序前端项目](./WxSpringBootProject)
-- [小程序后端项目](./WxAppProject)
+- [小程序前端项目](./WxAppProject)
+- [小程序后端项目](./WxSpringBootProject)
 - [管理系统前端项目](./AdminSysVueProject)
 - [管理系统后端项目](./AdminSpringBootProject)
 - [SQL文件(不包含建库语句，项目数据库为：restaurant)](./SQLFiles)
