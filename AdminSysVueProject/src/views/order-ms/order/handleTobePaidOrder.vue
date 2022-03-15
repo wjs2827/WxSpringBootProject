@@ -286,9 +286,10 @@ export default {
         confirmButtonText: "确定",
         cancelButtonText: "取消",
         type: "warning",
-      })
-        .then(() => {
+      }).then(() => {
           this.order.dishOrders.splice(index, 1);
+          let p = this.order.dishOrders[i].dishNum * this.order.dishOrders[i].dishPrice;
+          this.order.originalPrice -= p;
           this.$message({
             type: "success",
             message: "删除成功!",

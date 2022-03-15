@@ -41,14 +41,9 @@ public class UserIdAuthenticateFilter extends AbstractFilterChain{
     @Override
     public boolean doFilter(HttpServletRequest request, HttpServletResponse response) {
         String userId = request.getParameter(USER_ID);
-        String orderId = request.getParameter(ORDER_ID);
         boolean v = userMapper.hasUser(userId);
         if (!v) {
             response.setStatus(401);
-        }
-        // 用户提交订单，订单中的 userId 必须等于 token 标识的 userId
-        if (!VerifyUtils.isNullOrEmpty(orderId)) {
-            v = orderMapper.queryOrder(orderId).getUserId().equals(userId);
         }
         return v;
     }

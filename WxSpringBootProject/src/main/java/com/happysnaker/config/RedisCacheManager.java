@@ -1,127 +1,14 @@
 package com.happysnaker.config;
 
-import com.happysnaker.mapper.DiscountMapper;
-import com.happysnaker.mapper.DishMapper;
-import com.happysnaker.mapper.StoreMapper;
-import com.happysnaker.mapper.UserMapper;
 import com.happysnaker.pojo.Dish;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import java.sql.Timestamp;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
-
-/**
- * 定时任务
- */
-@Component
-class ScheduledTask {
-    @Autowired
-    UserMapper userMapper;
-
-    @Autowired
-    DishMapper dishMapper;
-
-    @Autowired
-    StoreMapper storeMapper;
-
-    @Autowired
-    DiscountMapper discountMapper;
-
-
-    @Qualifier("myRedisTemplate")
-    @Autowired
-    RedisTemplate redis;
-
-
-
-
-    @Scheduled(cron = "0 0 3,15 * * ?")
-    public void doTask1() {
-
-        for (String userId : userMapper.queryAllUserIds()) {
-            List<Integer> store = userMapper.queryCollectedStore(userId);
-            List<Integer> collectedDish = userMapper.queryCollectedDish(userId);
-            List<Integer> favoriteDish = userMapper.queryFavoriteDish(userId);
-            List<Integer> willBuyDish = userMapper.queryWillBuyDish(userId);
-            boolean b1 = redis.hasKey(RedisCacheManager.getUserLikeDishCacheKey(userId));
-            boolean b2 = redis.hasKey(RedisCacheManager.getUserCollectedDishCacheKey(userId));
-            boolean b3 = redis.hasKey(RedisCacheManager.getUserWillBuyDishCacheKey(userId));
-            boolean b4 = redis.hasKey(RedisCacheManager.getUserCollectedStoreCacheKey(userId));
-            if (b1 || b2 || b3) {
-                for (Integer id : dishMapper.queryAllDishId()) {
-                    if (b1) {
-                        boolean val1 = redis.opsForValue().getBit(RedisCacheManager.getUserLikeDishCacheKey(userId), id);
-                        if (collectedDish.indexOf(id) == -1 && val1) {
-                            userMapper.addCollectedDish(userId, id);
-                        } else if (collectedDish.indexOf(id) != -1 && !val1) {
-                            userMapper.removeCollectedDish(userId, id);
-                        }
-                    }
-                    if (b2) {
-                        boolean val2 = redis.opsForValue().getBit(RedisCacheManager.getUserCollectedDishCacheKey(userId), id);
-                        if (favoriteDish.indexOf(id) == -1 && val2) {
-                            userMapper.addFavoriteDish(userId, id);
-                        } else if (favoriteDish.indexOf(id) != -1 && !val2) {
-                            userMapper.removeFavoriteDish(userId, id);
-                        }
-                    }
-                    if (b3) {
-                        boolean val3 = redis.opsForValue().getBit(RedisCacheManager.getUserWillBuyDishCacheKey(userId), id);
-                        if (willBuyDish.indexOf(id) == -1 && val3) {
-                            userMapper.addWillBuyDish(userId, id);
-                        } else if (willBuyDish.indexOf(id) != -1 && !val3) {
-                            userMapper.removeWillBuyDish(userId, id);
-                        }
-                    }
-                }
-            }
-            if (b4) {
-                for (Integer id : storeMapper.queryAllStoreId()) {
-                    boolean val1 = redis.opsForValue().getBit(RedisCacheManager.getUserCollectedStoreCacheKey(userId), id);
-                    if (store.indexOf(id) == -1 && val1) {
-                        userMapper.addCollectedStore(userId, id);
-                    } else if (store.indexOf(id) != -1 && !val1) {
-                        userMapper.removeCollectedStore(userId, id);
-                    }
-                }
-            }
-            redis.delete(RedisCacheManager.getUserLikeDishCacheKey(userId));
-            redis.delete(RedisCacheManager.getUserCollectedDishCacheKey(userId));
-            redis.delete(RedisCacheManager.getUserWillBuyDishCacheKey(userId));
-            redis.delete(RedisCacheManager.getUserCollectedStoreCacheKey(userId));
-        }
-    }
-
-    // 11.55 定时写入今日销量，清除等待队列，更新用户每日折扣数目
-    @Scheduled(cron = "0 55 23 * * ?")
-    public void doTask2() {
-        for (Integer id : storeMapper.queryAllStoreId()) {
-            int num = 0;
-            if (redis.hasKey(RedisCacheManager.getTodayDateKey())) {
-                num = (int) redis.opsForHash().get(RedisCacheManager.getTodayDateKey(), id);
-            }
-            dishMapper.insertSaleLog(new Timestamp(RedisCacheManager.getTodayDate().getTime()), id, num);
-        }
-
-        redis.delete(RedisCacheManager.DISH_WAITING_QUEUE_KEY);
-
-        for (String userId : userMapper.queryAllUserIds()) {
-            Map<Integer, Map> map = userMapper.queryUserUsedDiscountCountInAllDish(userId);
-            for (Map.Entry<Integer, Map> it : map.entrySet()) {
-                int dishId = it.getKey();
-                userMapper.updateUsedDiscountCountByANewVal(userId, dishId, 0);
-            }
-        }
-
-    }
-}
 
 /**
  * REDIS缓存管理器，该类维护着一系列 redis 参数以及初始化任务和定时任务
@@ -137,18 +24,32 @@ public class RedisCacheManager {
     @Autowired
     private RedisTemplate redis;
 
-//    @Qualifier("myRabbitTemplate")
-//    @Autowired
-//    RabbitTemplate rabbit;
-
     /**
-     * 前缀 A 表示这属于小程序端的 key
+     * <p>前缀 A 表示这属于小程序端的 key，key 中格式包含了 key 的数据类型</p>
+     * <p>首页菜品静态数据的缓存 key</p>
      */
     public static final String INDEX_DISH_INFO_CACHE_KEY = "A-redis-kv:indexDishInfo-key";
+    /**
+     * 店铺静态数据的缓存 key
+     */
     public static final String STORE_CACHE_KEY = "A-redis-kv:stores-key";
-    public static final String DISH_LIKE_NUM_CACHE_KEY = "A-redis-kv:dish-like-num-key";
+    /**
+     * 菜品喜欢数目，这是一个 Hash-Key
+     *
+     */
+    public static final String DISH_LIKE_NUM_CACHE_KEY = "A-redis-hash:dish-like-num-key";
+    /**
+     * 菜品制作时间缓存，Hash-Key
+     */
     public static final String DISH_MAKE_TIME_CACHE_KEY = "A-redis-hash:dish-make-time-key";
+    /**
+     * 菜品等待队列缓存
+     */
     public static final String DISH_WAITING_QUEUE_KEY = "A-redis-list:dish-queue-key";
+    /**
+     * 标识某桌位上是否存在一个订单
+     */
+    public static final String ORDER_STATUS_KEY = "A-redis-bit:order-status-key";
 
     /**
      * 前缀 B 表示这属于后台的 key
@@ -205,11 +106,13 @@ public class RedisCacheManager {
      * 获取今日 0 点的 redisKey，存储每日的销量
      */
     public static String getTodayDateKey() {
-
         return "redis-kv:dish-sale-log?data=" + getTodayDate().toString();
     }
 
-    private static final long DEFAULT_EXPIRATION_TIME_SECONDS = 60 * 60 * 24;
+    /**
+     * 默认的过期时间为 1 小时，适合缓存长时间不变的数据
+     */
+    private static final long DEFAULT_EXPIRATION_TIME_SECONDS = 60 * 60;
 
     public boolean isKeyExpired(String key) {
         return redis.opsForValue().getOperations().getExpire(key) <= 0;
@@ -293,13 +196,13 @@ public class RedisCacheManager {
 
 
     /**
-     * 初始化菜品库存
+     * 刷新菜品库存，即使 key 已存在，缓存无过期时间，可以继续调用此方法强制刷新
      *
      * @param dishes
      */
-    public synchronized void initRedisDishStockCache(List<Dish> dishes, int storeId) {
+    public synchronized void flushRedisDishStockCache(List<Dish> dishes, int storeId) {
         if (hasKey(getDishStockCacheKey(storeId))) {
-            return;
+            redis.delete(getDishStockCacheKey(storeId));
         }
 //        Channel channel = rabbit.getConnectionFactory().createConnection().createChannel(false);
 //        try {
@@ -315,10 +218,9 @@ public class RedisCacheManager {
 //            e.printStackTrace();
 //        }
         for (Dish dish : dishes) {
-            System.out.println("gid" + dish.getId() + "gst" + dish.getStock());
             setForHash(getDishStockCacheKey(storeId), dish.getId(), dish.getStock());
         }
-        redis.expire(getDishStockCacheKey(storeId), 60 * 30, TimeUnit.SECONDS);
+
     }
 
 

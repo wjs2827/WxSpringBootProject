@@ -4,6 +4,7 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
 <mapper namespace="com.happysnaker.mapper.DishMapper">
+    <!--    与后台同步，不能使用缓存-->
     <resultMap id="dishMap" type="com.happysnaker.pojo.Dish">
         <id column="id" property="id"></id>
         <result column="name" property="name"></result>
@@ -77,7 +78,8 @@
                  LEFT JOIN mms_discount
                            ON dms_dish.id = mms_discount.dish_id
                  INNER JOIN dms_dish_stock AS stock
-                            ON stock.store_id = #{storeId} AND dms_dish.id = stock.dish_id;
+                            ON stock.store_id = #{storeId} AND dms_dish.id = stock.dish_id
+        FOR UPDATE;
     </select>
 
     <select id="queryHotSaleDish" parameterType="java.lang.Integer" resultMap="dishMap">
@@ -125,7 +127,16 @@
         UPDATE dms_dish_stock
         SET stock = stock + #{val}
         WHERE store_id = #{storeId}
-          AND dish_id = #{dishId}  AND stock > 0;
+          AND dish_id = #{dishId}  AND stock + #{val} >= 0;
+        -- 淦，原来这里一直写错了....
+    </update>
+
+    <update id="optimisticDeductInventory" parameterType="java.lang.Integer">
+        UPDATE dms_dish_stock
+        SET stock = stock - #{val}
+        WHERE store_id = #{storeId}
+          AND dish_id = #{dishId}  AND stock - #{val} >= 0;
+        -- 新方法 by 2022-3-15 val 是一个正数，表示要扣减的库存....
     </update>
 
     <insert id="insertDishInventory" parameterType="java.lang.Integer">

@@ -4,6 +4,7 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
 <mapper namespace="com.happysnaker.mapper.UserMapper">
+    <!--小程序用户只和先程序端有关，可以使用缓存-->
     <cache size="512"></cache>
 
     <select id="queryUser" resultType="com.happysnaker.pojo.User">

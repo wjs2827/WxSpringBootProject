@@ -18,6 +18,13 @@ import java.util.Map;
 
 
 /**
+ *       使用消息队列需要做的事有：
+ *       <ul>
+ *           <li>创建交换机，交换机有直连、扇出、广播、主题等几大常见类型</li>
+ *           <li>创建队列，这一步可配置队列属性，例如是否持久化、是否独占、对应的死信队列等</li>
+ *           <li>将队列绑定到交换机上，如果交换机不是广播类型，那么还需要绑定对应的 key</li>
+ *          <li>业务逻辑创建消费者，只需对方法添加注解 {@link org.springframework.amqp.rabbit.annotation.RabbitListener} 绑定队列队列即可</li>
+ *      </ul>
  * @author Happysnaker
  * @description
  * @date 2021/12/12
@@ -26,17 +33,26 @@ import java.util.Map;
 @Configuration
 public class OrderRabbitMqConfig {
     /**
-     * 添加订单相关
+     * 添加订单相关，定义正常交换机和死信交换机
      */
     public static final String ORDER_EXCHANGE = "orderExchange";
     public static final String ORDER_DEAD_EXCHANGE = "orderDeadExchange";
 
+    /**
+     * 添加订单相关，定义正常队列和路由
+     */
     public static final String ORDER_ADD_QUEUE = "orderAddQueue";
     public static final String ORDER_ADD_ROUTEING_KEY = "orderAddKey";
 
+    /**
+     * 添加订单相关，定义死信队列和路由
+     */
     public static final String ORDER_ADD_DEAD_QUEUE = "orderAddDeadQueue";
     public static final String ORDER_ADD_DEAD_ROUTEING_KEY = "orderAddDeadKey";
 
+    /**
+     * 回滚库存相关，定义回滚队列和路由
+     */
     public static final String ROLL_BACK_STOCK_QUEUE = "rollBackStockQueue";
     public static final String ROLL_BACK_STOCK_ROUTEING_KEY = "rollBackStockKey";
 
@@ -59,7 +75,6 @@ public class OrderRabbitMqConfig {
         rabbitTemplate.setConnectionFactory(connectionFactory);
         rabbitTemplate.setExchange("orderExchange");
         rabbitTemplate.setConfirmCallback((data, ack, cause)-> {
-            System.out.println("cause: " + cause + " ack: " + ack + " data: "+ data);
             if (ack) {
                 return;
             } else {
@@ -81,6 +96,7 @@ public class OrderRabbitMqConfig {
         return factory;
     }
     /**
+
      * 创建直连交换机
      * @return
      */
@@ -165,8 +181,7 @@ public class OrderRabbitMqConfig {
      * @return
      */
     @Bean
-    public Binding bindOrderAddDeadQueue(
-            @Qualifier(value = "getDirectDeadExchange") DirectExchange getDirectExchange, @Qualifier(value = "getOrderAddDeadQueue") Queue queue) {
+    public Binding bindOrderAddDeadQueue(@Qualifier(value = "getDirectDeadExchange") DirectExchange getDirectExchange, @Qualifier(value = "getOrderAddDeadQueue") Queue queue) {
         return BindingBuilder.bind(queue).to(getDirectExchange).with(ORDER_ADD_DEAD_ROUTEING_KEY);
     }
 

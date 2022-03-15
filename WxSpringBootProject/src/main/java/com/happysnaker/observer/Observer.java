@@ -1,4 +1,4 @@
-package com.happysnaker.Observer;
+package com.happysnaker.observer;
 
 /**
  * @author Happysnaker

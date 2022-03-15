@@ -8,7 +8,10 @@ Component({
       type: Object,
       value: {},
       observer: function (newVal, oldVal, change) {
-        console.log("观察者 cart！！", change);
+        console.log("观察者 cart！！", newVal);
+        this.setData({
+          cart: newVal
+      })
       }
     },
 

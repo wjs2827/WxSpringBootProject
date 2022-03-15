@@ -111,7 +111,7 @@
             下单时间：{{m1.format(order.createTime)}}
         </view>
         <view class="row" hover-class="none" hover-stop-propagation="false">
-            付款时间：{{m1.format(order.finalTime)}}
+            付款时间：{{m1.format(order.consumeType <= 1 ? order.finalTime : order.createTime)}}
         </view>
         <view class="row" hover-class="none" hover-stop-propagation="false">
             完成时间：{{m1.format(order.finalTime)}}

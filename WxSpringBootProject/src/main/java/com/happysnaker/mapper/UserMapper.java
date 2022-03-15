@@ -80,7 +80,7 @@ public interface UserMapper {
 
 
     /**
-     * 返回用户在指定店铺中已经享受过菜品的折扣的次数
+     * 返回用户已经享受过菜品的折扣的次数
      * @param userId 用户ID
      * @return key 是对应的 dishId，val是用户对于该菜品已享受折扣的次数，由于mybatis的缘故，此处val为一个map，通过调用 map.get("count")以得到次数
      */

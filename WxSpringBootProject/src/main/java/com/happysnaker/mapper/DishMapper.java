@@ -17,9 +17,17 @@ import java.util.Map;
 @Mapper
 @Repository
 public interface DishMapper {
+    /**
+     * 获取所有菜品 ID，包括套餐
+     * @return
+     */
     @Select("SELECT id FROM dms_dish UNION SELECT id FROM dms_combo")
     List<Integer> queryAllDishId();
 
+    /**
+     * 查询 dish 表中所有的信息
+     * @return
+     */
     List<Dish> queryDishes();
 
     /**
@@ -124,6 +132,15 @@ public interface DishMapper {
      * @return 影响的记录数，如果成功，则为1，否则为0
      */
     int updateDishInventory(@Param("storeId") int storeId, @Param("dishId") int dishId, @Param("val") int val);
+
+    /**
+     * 乐观的扣减库存的方法
+     * @param storeId
+     * @param dishId
+     * @param val 注意，此值必须是个正数，表示要扣减的数目
+     * @return
+     */
+    int optimisticDeductInventory(@Param("storeId") int storeId, @Param("dishId") int dishId, @Param("val") int val);
 
     /**
      * 当updateDishInventory方法调用失败时，此时数据库没有该记录，需要插入一条记录

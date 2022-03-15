@@ -4,7 +4,7 @@ spring:
   datasource:
     url: jdbc:mysql://localhost:3306/restaurant?useSSL=true&useUnicode=true&characterEncoding=UTF-8&serverTimezone=UTC&verifyServerCertificate=false
     username: root
-    password:
+    password: 'oipihoe1yh2y98uasijsjakghdgkd178ouioipwe))!&*&&ujieqwoph'
     driver-class-name: com.mysql.cj.jdbc.Driver
     name: defaultDataSource
   mybatis:
@@ -68,7 +68,12 @@ logging:
 #  level:
 #    com.happysnaker.mapper: debug
 
-
+#logging:
+#  level:
+#    com.happysnaker.mapper: debug
+# 策略，0是高并发，使用redis提前缓存；1是乐观锁；2是悲观锁
+strategy:
+  place-order: 1
 
 
 

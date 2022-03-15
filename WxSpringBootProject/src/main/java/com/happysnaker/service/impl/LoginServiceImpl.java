@@ -25,6 +25,9 @@ import java.util.Map;
  */
 @Service
 public class LoginServiceImpl implements LoginService {
+    /**
+     * APPID 和 密匙 换成你自己的
+     */
     private final String URL = "https://api.weixin.qq.com/sns/jscode2session";
     private final String APP_ID = "wx9173568ecc3ae80d";
     private final String SECRET = "51e808320e1b5266c53118daa3350d6c";
@@ -60,8 +63,7 @@ public class LoginServiceImpl implements LoginService {
             return obj;
         } catch (ClientProtocolException e) {
             e.printStackTrace();
-        } catch (
-                IOException e) {
+        } catch (IOException e) {
             e.printStackTrace();
         }
         return null;

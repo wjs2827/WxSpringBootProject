@@ -11,6 +11,7 @@ import com.happysnaker.utils.JsonUtils;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -38,7 +39,7 @@ public class DishServiceImpl extends BaseService implements DishService {
     }
 
     /**
-     * 同步后端数据，例如上架状态、是否推荐等，这类数据以 Redis 中为准
+     * 同步后端数据，例如上架状态、是否推荐等，这类数据以 Redis 中为准，例如，如果后端显示下架，那么将不会返回给前端，由于后端也是采用 Redis 做缓存，未刷新到数据库中，因此不能从数据库中取
      *
      * @param dishes    菜品
      * @param pubStatus 是否需要同步上架状态
@@ -50,8 +51,8 @@ public class DishServiceImpl extends BaseService implements DishService {
         return dishes.stream().filter((dish -> {
             // 要么未设置 pubStatus，否则进行判断，如果 redis 无 key，默认通过，否则对比缓存数据
             boolean b1 = (!pubStatus ||
-                        (!redisManager.hasKey(RedisCacheManager.DISH_PUBLISH_STATUS_KEY)
-                                || redisManager.getBit(RedisCacheManager.DISH_PUBLISH_STATUS_KEY, (long) dish.getId())));
+                    (!redisManager.hasKey(RedisCacheManager.DISH_PUBLISH_STATUS_KEY)
+                            || redisManager.getBit(RedisCacheManager.DISH_PUBLISH_STATUS_KEY, (long) dish.getId())));
             boolean b2 = (!recStatus ||
                     (!redisManager.hasKey(RedisCacheManager.DISH_RECOMMEND_STATUS_KEY)
                             || redisManager.getBit(RedisCacheManager.DISH_RECOMMEND_STATUS_KEY, (long) dish.getId())));
@@ -64,6 +65,7 @@ public class DishServiceImpl extends BaseService implements DishService {
 
     /**
      * 同步套餐上架状态
+     *
      * @param combos
      * @return
      */
@@ -78,7 +80,7 @@ public class DishServiceImpl extends BaseService implements DishService {
             }
             // 要么未设置 pubStatus，否则进行判断，如果 redis 无 key，默认通过，否则对比缓存数据
             return (!redisManager.hasKey(RedisCacheManager.DISH_PUBLISH_STATUS_KEY)
-                            || redisManager.getBit(RedisCacheManager.COMBO_PUBLISH_STATUS_KEY, (long) combo.getId()));
+                    || redisManager.getBit(RedisCacheManager.COMBO_PUBLISH_STATUS_KEY, (long) combo.getId()));
         })).collect(Collectors.toList());
     }
 
@@ -89,9 +91,22 @@ public class DishServiceImpl extends BaseService implements DishService {
             return (String) redisManager.getForValue(RedisCacheManager.INDEX_DISH_INFO_CACHE_KEY);
         }
         // 上架状态等从 Redis 中拿，与后台同步
-        List<Dish> hotSaleDish = synchronizeDishBackendStatus(dishMapper.queryHotSaleDish(15), true, false, false);
-        List<Dish> newDish = synchronizeDishBackendStatus(dishMapper.queryNewDish(), true, false, true);
-        List<Dish> recommendedDish = synchronizeDishBackendStatus(dishMapper.queryRecommendedDish(), true, true, false);
+        List<Dish> hotSaleDish = synchronizeDishBackendStatus(
+                dishMapper.queryHotSaleDish(15),
+                true, false, false
+        );
+
+        List<Dish> newDish = synchronizeDishBackendStatus(
+                dishMapper.queryNewDish(),
+                true, false, true
+        );
+
+        List<Dish> recommendedDish = synchronizeDishBackendStatus(
+                dishMapper.queryRecommendedDish(),
+                true, true, false
+        );
+
+
         List<Combo> combos = synchronizeComboBackendStatus(getCombos());
 
         JSONObject object = new JSONObject();
@@ -99,7 +114,10 @@ public class DishServiceImpl extends BaseService implements DishService {
         JsonUtils.listAddToJsonObject(object, newDish, "newDishList");
         JsonUtils.listAddToJsonObject(object, recommendedDish, "recommendDishList");
         JsonUtils.listAddToJsonObject(object, combos, "combos");
-        redisManager.addIfAbsentForValue(RedisCacheManager.INDEX_DISH_INFO_CACHE_KEY, object.toJSONString());
+
+        // 添加缓存，由于菜品信息数据静态数据，缓存时间可以长一点
+        // 但是后台管理员可能会变更菜品信息，太久了也是不合适的，因此设置为 3 分钟
+        redisManager.addIfAbsentForValue(RedisCacheManager.INDEX_DISH_INFO_CACHE_KEY, object.toJSONString(), 60 * 3, TimeUnit.SECONDS);
         return object.toJSONString();
     }
 
@@ -160,8 +178,35 @@ public class DishServiceImpl extends BaseService implements DishService {
         } catch (Exception e) {
             e.printStackTrace();
             //可能是 redis 中缓存过期，初始化用户收藏的菜品和套餐，并重试
-            redisManager.initRedisUserMarkedCache(dishMapper.queryAllDishId(), userMapper.queryCollectedDish(userId), RedisCacheManager.getUserCollectedDishCacheKey(userId));
+            redisManager.initRedisUserMarkedCache(
+                    dishMapper.queryAllDishId(),
+                    userMapper.queryCollectedDish(userId),
+                    RedisCacheManager.getUserCollectedDishCacheKey(userId));
             return getUserCollectedDishes(userId);
+        }
+        return ans;
+    }
+
+    @Override
+    public List<Map<String, Integer>> getDishLikeNumDeltaList() {
+        List<Map<String, Integer>> ans = new ArrayList<>();
+        for (Integer id : dishMapper.queryAllDishId()) {
+            Map<String, Integer> map = new HashMap<>();
+            map.put("dishId", id);
+            try {
+                if (id == 1) {
+                    System.out.println(1);
+                }
+                int likeNum = (int) redisManager.getForHash(RedisCacheManager.DISH_LIKE_NUM_CACHE_KEY, id);
+                Object o = redis.opsForHash().get(RedisCacheManager.DISH_LIKE_NUM_CACHE_KEY, id);
+                map.put("likeNumDelta", likeNum);
+                ans.add(map);
+            } catch (Exception e) {
+                // 缓存中可能为空，如果为空说明数据未变化，那么什么也不做
+            }
+        }
+        for (Map<String, Integer> map : ans) {
+            System.out.println("map = " + map);
         }
         return ans;
     }

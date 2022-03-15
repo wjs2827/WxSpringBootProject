@@ -70,7 +70,7 @@ public class TokenFilterChain extends AbstractFilterChain{
             response.setStatus(401);
             return false;
         }
-//        System.out.println("tkn = " + token);
+
         //根据 token 取出 userId
         Object userId = redis.opsForValue().get(RedisCacheManager.getTokenCacheKey(token));
         if (userId == null) {

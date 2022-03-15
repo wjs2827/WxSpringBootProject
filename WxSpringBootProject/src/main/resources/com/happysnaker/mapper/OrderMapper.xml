@@ -4,6 +4,7 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
 <mapper namespace="com.happysnaker.mapper.OrderMapper">
+    <!--    与后台同步，不能使用缓存-->
     <!--   订单表可以尝试分表 -->
     <resultMap id="orderMap" type="com.happysnaker.pojo.Order">
         <id column="id" property="id"></id>

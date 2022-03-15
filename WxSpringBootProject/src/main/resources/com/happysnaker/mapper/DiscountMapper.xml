@@ -4,6 +4,7 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
 <mapper namespace="com.happysnaker.mapper.DiscountMapper">
+    <!--    与后台同步，不能使用缓存-->
     <resultMap id="discountMap" type="com.happysnaker.pojo.Discount">
         <!-- 配置文件中已开启驼峰法转换，此处填写特例即可 -->
     </resultMap>

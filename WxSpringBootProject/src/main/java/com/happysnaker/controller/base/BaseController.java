@@ -1,7 +1,7 @@
 package com.happysnaker.controller.base;
 
 import com.alibaba.fastjson.JSONObject;
-import com.happysnaker.Observer.Observer;
+import com.happysnaker.observer.Observer;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -29,8 +29,10 @@ public class BaseController {
     protected final String NUM_PARA = "num";
     protected final String USER_ID_PARAM = "userId";
     protected final String STORE_ID_PARAM = "storeId";
+    protected final String TABLE_ID_PARAM = "tableId";
     protected final String CACHE_PARAM = "cache";
     protected final String DISH_ID_PARAM = "dishId";
+    protected final String DISH_PARAM = "dish";
     protected final String JS_CODE_PARAM = "jsCode";
     protected final String ORDER_PARAM = "order";
     protected final String ORDER_ID_PARAM = "orderId";
@@ -51,7 +53,7 @@ public class BaseController {
 
     /** 其他默认信息 */
     protected final long DEFAULT_EXPIRATION_TIME = 1500;
-    protected  int DEFAULT_DISH_LIKE_FLUSH_NUM = 1;
+    protected  int DEFAULT_DISH_LIKE_FLUSH_NUM = 5;
 
     public static String getIpAddress(HttpServletRequest request) {
         String ip = request.getHeader("x-forwarded-for");
@@ -99,31 +101,13 @@ public class BaseController {
         }
     }
 
-//    protected Object getCacheIfEnableCache(HttpServletRequest request, String key) {
-//        if (!VerifyUtils.isNullOrEmpty(request.getParameter(CACHE_PARAM))) {
-//            if (request.getParameter(CACHE_PARAM).equals(ENABLE_CACHE) && redis.hasKey(key)) {
-//                return (String) redis.opsForValue().get(key);
-//            }
-//        }
-//        return null;
-//    }
-//
-//    protected Object getCacheOrDefaultIfEnableCache(HttpServletRequest request, String key, Object def) {
-//        Object cache = getCacheIfEnableCache(request, key);
-//        return cache == null ? def : cache;
-//    }
-//
-//    protected Object addCacheIfAbsent(String key, Object val, long time) {
-//        if (!redis.hasKey(key)) {
-//            redis.opsForValue().set(key, val);
-//            redis.expire(key, time, TimeUnit.SECONDS);
-//        }
-//        return val;
-//    }
-//
-//    protected Object addCacheIfAbsent(String key, Object val) {
-//        return addCacheIfAbsent(key, val, DEFAULT_EXPIRATION_TIME);
-//    }
+    protected String getResponseResult(int code, String msg, Object body) {
+        Map map = new HashMap(4);
+        map.put("code", code);
+        map.put("msg", msg);
+        map.put("body", body);
+        return JSONObject.toJSONString(map);
+    }
 
     protected String error(HttpServletResponse response) {
         response.setStatus(406);

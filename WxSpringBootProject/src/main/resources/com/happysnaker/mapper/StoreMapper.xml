@@ -4,7 +4,7 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
 <mapper namespace="com.happysnaker.mapper.StoreMapper">
-
+<!--    与后台同步，不能使用缓存-->
     <resultMap id="storeMap" type="com.happysnaker.pojo.Store">
         <result column="id" property="id"></result>
         <result column="name" property="name"></result>

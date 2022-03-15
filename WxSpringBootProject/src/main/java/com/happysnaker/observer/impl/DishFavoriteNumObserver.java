@@ -1,6 +1,6 @@
-package com.happysnaker.Observer.impl;
+package com.happysnaker.observer.impl;
 
-import com.happysnaker.Observer.Observer;
+import com.happysnaker.observer.Observer;
 import com.happysnaker.mapper.DishMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;

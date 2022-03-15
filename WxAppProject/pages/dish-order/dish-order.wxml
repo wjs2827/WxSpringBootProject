@@ -113,7 +113,7 @@
                 <block wx:for="{{combos}}">
                     <view style="{{comboType!=index?'display:none':''}}">
                         <van-empty description="这里空空如也" wx:if="{{item.comboList.length==0}}"/>
-                        <combo catch:countChange="comboCountChange" countMap='{{countMap}}' combos="{{item.comboList}}" data-type='dish_combo' dishShowType='order' catchclickLike="clickLike" catchclickCollection="clickCollection"></combo>
+                        <combo catch:countChange="comboCountChange" cart='{{cart}}' combos="{{item.comboList}}" data-type='dish_combo' dishShowType='order' catchclickLike="clickLike" catchclickCollection="clickCollection"></combo>
                         <van-divider contentPosition="center">
                          已经到底了，快快下单吧！
                         </van-divider>

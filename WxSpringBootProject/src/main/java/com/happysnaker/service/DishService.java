@@ -50,4 +50,13 @@ public interface DishService {
      */
     List<Dish> getUserCollectedDishes(String userId);
 
+
+
+    /**
+     * 获取菜品的喜欢数目变更列表，用数据库中的数据加上 likeNumDelta 即为当前菜品的喜欢数目
+     * @return Map 列表，key 是 dishId 和 likeNumDelta，val 是对应的值
+     */
+    List<Map<String, Integer>> getDishLikeNumDeltaList();
+
+
 }

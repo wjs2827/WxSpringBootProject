@@ -17,7 +17,6 @@ import java.util.Map;
 public class Order  implements Serializable {
   private boolean isNew;
 
-  // lombok 离奇失效
   public boolean getIsNew() {
     return isNew;
   }
@@ -50,7 +49,7 @@ public class Order  implements Serializable {
   private String fetchMealCode;
   private String remark;
   /**
-   * Map -> dishId: v; dishName: v; dishPrice: v; dishNum: v
+   * Map -> dishId: v; dishName：v; dishPrice: v; dishNum: v; usedCount：v
    */
   private List<Map<String, Object>> dishOrders;
   private OrderApplyTable applyTable;

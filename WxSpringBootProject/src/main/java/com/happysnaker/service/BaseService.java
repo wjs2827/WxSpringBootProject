@@ -48,4 +48,8 @@ public class BaseService implements Serializable {
     protected UserMapper userMapper;
 
 
+    protected boolean idCombo(int dishId) {
+        return dishId >= 100000;
+    }
+
 }

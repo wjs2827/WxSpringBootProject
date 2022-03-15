@@ -51,7 +51,8 @@ public class SecurityFilter extends AbstractFilterChain{
         String ip = BaseController.getIpAddress(request);
         if (!redisManager.hasKey(RedisCacheManager.getIpCacheKey(ip))) {
             redis.opsForValue().set(RedisCacheManager.getIpCacheKey(ip), 1);
-            redis.expire(RedisCacheManager.getIpCacheKey(ip), 10, TimeUnit.SECONDS);
+            redis.expire(RedisCacheManager.getIpCacheKey(ip),
+                    10, TimeUnit.SECONDS);
             return true;
         }
         if ((int)redis.opsForValue().get(RedisCacheManager.getIpCacheKey(ip)) >= MAX_COUNT_IN_TEN_SECOND) {

@@ -15,22 +15,34 @@ import java.io.Serializable;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Discount implements Serializable {
-  private final int DISCOUNT = 1;
-  private final int INSTANT_REDUCTION = 2;
+    /**
+     * 折扣
+     */
+    private static final int DISCOUNT = 1;
+    /**
+     * 立减
+     */
+    private static final int INSTANT_REDUCTION = 2;
 
-  private int dishId;
-  private int type;
-  private int val;
-  private int count;
-  private int unit;
+    private int dishId;
+    private int type;
+    private int val;
+    private int count;
+    private int unit;
 
-  public double getDiscount(double price) {
-    if (type == DISCOUNT) {
-      return price * (double) (10 - val) / 10f;
-    } else if (type == INSTANT_REDUCTION) {
-      return val;
+    /**
+     * 获取优惠的价格
+     *
+     * @param price 原价
+     * @return
+     */
+    public double getDiscount(double price) {
+        if (type == DISCOUNT) {
+            return price * (double) (10 - val) / 10f;
+        } else if (type == INSTANT_REDUCTION) {
+            return val;
+        }
+        return 0;
     }
-    return 0;
-  }
 
 }

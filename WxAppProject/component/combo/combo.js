@@ -62,7 +62,7 @@ Component({
         })
       }
     },
-    countMap: {
+    cart: {
       type: Object,
       value: {}
     },

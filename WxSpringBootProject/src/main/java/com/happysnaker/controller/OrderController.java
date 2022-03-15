@@ -2,11 +2,11 @@ package com.happysnaker.controller;
 
 import com.alibaba.fastjson.JSONObject;
 import com.happysnaker.controller.base.BaseController;
-import com.happysnaker.exception.OrderAddException;
-import com.happysnaker.exception.ReadWriterLockException;
 import com.happysnaker.exception.UpdateException;
+import com.happysnaker.pojo.Dish;
 import com.happysnaker.pojo.Order;
 import com.happysnaker.pojo.OrderApplyTable;
+import com.happysnaker.pojo.ShoppingCart;
 import com.happysnaker.service.OrderService;
 import com.happysnaker.utils.VerifyUtils;
 import io.swagger.annotations.Api;
@@ -51,16 +51,18 @@ public class OrderController extends BaseController {
 
         Order order = JSONObject.parseObject(request.getParameter(ORDER_PARAM), Order.class);
         int[] t = new int[]{2, 0, 1, 1};
-        order.setOrderType(t[order.getConsumeType()]); // 防止恶意用户伪造 orderType
+        // 防止恶意用户伪造 orderType
+        order.setOrderType(t[order.getConsumeType()]);
+
         Map res = null;
         try {
-            res = service.addUserOrder(request.getParameter(USER_ID_PARAM), order);
-        } catch (OrderAddException | ReadWriterLockException e) {
+            order.setUserId(request.getParameter(USER_ID_PARAM));
+            res = service.placeOrder(order);
+        } catch (Exception e) {
             e.printStackTrace();
-            Map map = new HashMap();
+            Map map = new HashMap(2);
             map.put("code", 409);
-            map.put("msg", "库存不足");
-            response.setStatus(409);
+            map.put("msg", e.getMessage());
             return JSONObject.toJSONString(map);
         }
         return JSONObject.toJSONString(res);
@@ -73,7 +75,7 @@ public class OrderController extends BaseController {
             response.setStatus(PARAM_ERROR_STATUS);
             return null;
         }
-        double waitingTime =  service.getWaitingTime(Integer.parseInt(request.getParameter(STORE_ID_PARAM)));
+        double waitingTime = service.getWaitingTime(Integer.parseInt(request.getParameter(STORE_ID_PARAM)));
         JSONObject object = new JSONObject();
         object.put("time", waitingTime);
         return object.toJSONString();
@@ -124,6 +126,7 @@ public class OrderController extends BaseController {
 
     /**
      * 用户取消支付，订单状态设置为待支付，默认一段时间后取消
+     *
      * @param request
      * @param response
      * @return
@@ -141,5 +144,140 @@ public class OrderController extends BaseController {
             return error(response);
         }
         return OK;
+    }
+
+
+    @GetMapping("/is_occupied")
+    public String isOccupied(int sid, int tid, HttpServletRequest request) {
+        String userId = request.getParameter(USER_ID_PARAM);
+        boolean b = service.isOccupied(sid, tid, userId);
+        int code = !b ? 200 : 0;
+        String msg = !b ? "桌位空闲" : "已被占有";
+        return getResponseResult(code, msg, null);
+    }
+
+
+    @PostMapping("/relieve_occupied")
+    public String relieveOccupied(int sid, int tid, int consumeType, HttpServletRequest request) {
+        String userId = request.getParameter(USER_ID_PARAM);
+        ShoppingCart cart = service.getCart(userId);
+        if (cart != null) {
+            if (cart.getConsumeType() == -1) {
+                cart.setConsumeType(consumeType);
+            }
+            if (cart.getConsumeType() == consumeType &&
+                    cart.getStoreId() == sid &&
+                    cart.getTableId() == tid &&
+                    !cart.getUserId().equals(userId)) {
+                service.relieveOccupied(userId);
+                return getResponseResult(200, "操作成功", null);
+            }
+        }
+        return getResponseResult(200, "操作成功", null);
+    }
+
+    @PostMapping("/add_dish")
+    public String addDishToCart(int sid, int tid, int consumeType, HttpServletRequest request) {
+        String userId = request.getParameter(USER_ID_PARAM);
+        String d = request.getParameter(DISH_PARAM);
+        Dish dish = JSONObject.parseObject(d, Dish.class);
+        try {
+            ShoppingCart cart = service.getCart(userId);
+            if (cart != null) {
+                if (cart.getConsumeType() == -1) {
+                    cart.setConsumeType(consumeType);
+                }
+                if (cart.getConsumeType() != consumeType ||
+                        cart.getStoreId() != sid ||
+                        cart.getTableId() != tid ||
+                        !cart.getUserId().equals(userId)) {
+                    throw new Exception("当前已存在购物车，请务重复消费");
+                }
+            }
+            cart = service.addDish(sid, tid, userId, dish);
+            return getResponseResult(200, "ok", cart);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return getResponseResult(0, e.getMessage(), null);
+        }
+    }
+
+    @PostMapping("/remove_dish")
+    public String removeDishToCart(int sid, int tid, HttpServletRequest request) {
+        String userId = request.getParameter(USER_ID_PARAM);
+        String d = request.getParameter(DISH_PARAM);
+        Dish dish = JSONObject.parseObject(d, Dish.class);
+        try {
+            ShoppingCart cart = service.removeDish(sid, tid, userId, dish);
+            if (cart == null) {
+                return getResponseResult(0, "暂无数据", null);
+            }
+            // 特殊值，表示用户在加餐也页面减餐
+            if (cart.getLastModify() == -1) {
+                cart.setLastModify(System.currentTimeMillis());
+                return getResponseResult(101, "若您正在加餐，我们不允许您取消原来已点的菜品，这是因为您原来点的菜品可能已经下锅或已完成，如果您确有需求，请前往前台与管理员说明情况。", cart);
+            }
+            return getResponseResult(200, "ok", cart);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return getResponseResult(0, e.getMessage(), null);
+        }
+    }
+
+    @GetMapping("/get_cart")
+    public String getOldCart(String orderId) {
+        System.out.println("orderId = " + orderId);
+        try {
+            ShoppingCart cart = service.getCartFromOrder(orderId);
+            return getResponseResult(200, "ok", cart);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return getResponseResult(0, e.getMessage(), null);
+        }
+    }
+
+
+    @GetMapping("/get_order")
+    public String getOrder(HttpServletRequest request) {
+        String userId = request.getParameter(USER_ID_PARAM);
+        try {
+            Order order = service.getOrder(userId);
+            return getResponseResult(200, "ok", order);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return getResponseResult(0, e.getMessage(), null);
+        }
+    }
+
+    static int c = 5;
+
+    @GetMapping("/check")
+    public String isComplete(String orderId) {
+        if (orderId == null) {
+            return getResponseResult(400, "参数错误", null);
+        }
+        System.out.println("模拟排队.......");
+        if (c < 0) {
+            c = 3;
+        }
+        if (c-- != 0) {
+            return getResponseResult(0, "正在排队", null);
+        }
+        try {
+            int complete = service.isComplete(orderId);
+            System.out.println("complete = " + complete);
+            if (complete == 1) {
+                return getResponseResult(200, "下单成功", null);
+            } else if (complete == -1) {
+                return getResponseResult(409, "下单失败", null);
+            } else {
+                return getResponseResult(0, "正在排队", null);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            String msg = e.getMessage();
+            msg = msg == null ? e.getCause().toString() : msg;
+            return getResponseResult(400, msg, null);
+        }
     }
 }

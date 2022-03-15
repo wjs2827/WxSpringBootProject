@@ -4,6 +4,7 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
 <mapper namespace="com.happysnaker.mapper.ComboMapper">
+    <!--    与后台同步，不能使用缓存-->
     <resultMap id="comboMap" type="com.happysnaker.pojo.Combo">
         <id column="id" property="id"></id>
         <result column="name" property="name"></result>

@@ -138,7 +138,7 @@
       </block>
       <block wx:else>
         <!-- <van-stepper value="{{countMap[item.id]}}" min="0" max="{{item.stock}}" class="btn" catch:change="countChange" data-id='{{index}}' /> -->
-        <van-stepper  value="{{cart[item.id].num}}" min="0" max="{{item.stock}}" class="btn" catch:change="countChange" data-id='{{index}}' />
+        <van-stepper  disableInput  value="{{cart[item.id].num}}" min="0" max="{{item.stock}}" class="btn" catch:change="countChange" data-id='{{index}}' />
       </block>
     </view>
   </view>
