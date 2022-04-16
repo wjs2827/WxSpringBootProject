@@ -55,7 +55,6 @@ public class OrderConsumerImpl extends BaseService implements OrderConsumer {
 
 
     /**
-     * @param b       是否需要扣减库存，如果为 true 则此方法会扣减库存，否则，将默认库存扣减完成
      * @param bytes   消息队列传递的序列化的消息，可调用{@link JsonUtils#getObjectFromBytes(byte[])} 方法转换成 {@link OrderMessage}
      * @param msg     消息队列中标识消息的属性
      * @param channel 消息队列中传递消息的通道
@@ -148,7 +147,7 @@ public class OrderConsumerImpl extends BaseService implements OrderConsumer {
      * 更新用户使用折扣、插入订单菜品表、更新销量
      */
     public void handleDishOrders(String orderId, String userId, int storeId, List<Map<String, Object>> dishOrders) throws IOException {
-        for (var it : dishOrders) {
+        for (Map<String, Object> it : dishOrders) {
             int row = userMapper.updateUsedDiscountCount(
                     userId, (int) it.get("dishId"), (int) it.get("usedCount"));
             if (row == 0) {
@@ -172,7 +171,7 @@ public class OrderConsumerImpl extends BaseService implements OrderConsumer {
      * @throws OrderAddException
      */
     public void deductionInventory(Map<Integer, Integer> dishNumMap, int storeId) throws OrderAddException {
-        for (var it : dishNumMap.entrySet()) {
+        for (Map.Entry<Integer, Integer> it : dishNumMap.entrySet()) {
             // 乐观锁查询
             int row = dishMapper.optimisticDeductInventory(
                     storeId, it.getKey(), it.getValue());
@@ -188,7 +187,7 @@ public class OrderConsumerImpl extends BaseService implements OrderConsumer {
      */
     public void addToWaitingQueue(Map<Integer, Integer> dishNumMap, int storeId) {
         long nowTs = System.currentTimeMillis();
-        for (var it : dishNumMap.entrySet()) {
+        for (Map.Entry<Integer, Integer> it : dishNumMap.entrySet()) {
             //将菜品添加至等待队列中，对于多个相同菜品，重复添加单独实例以便处理
             // 同时附带菜品加入的时间戳
             for (int i = 0; i < (int) it.getValue(); i++) {
@@ -213,7 +212,7 @@ public class OrderConsumerImpl extends BaseService implements OrderConsumer {
         Map<Integer, Integer> dishNumMap = (Map<Integer, Integer>) JsonUtils.getObjectFromBytes(bytes);
         int storeId = dishNumMap.get(-1);
         try {
-            for (var it : dishNumMap.entrySet()) {
+            for (Map.Entry<Integer, Integer> it : dishNumMap.entrySet()) {
                 int id = it.getKey(), stock = it.getValue();
                 redis.opsForHash().increment(RedisCacheManager.getDishStockCacheKey(storeId), id, stock);
             }

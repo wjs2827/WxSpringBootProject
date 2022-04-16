@@ -28,7 +28,7 @@ public class MessageServiceImpl extends BaseService implements MessageService {
 
     @Override
     public List<Message> queryMessage(String userId) {
-        var list = messageMapper.queryMessage(userId);
+        List<Message> list = messageMapper.queryMessage(userId);
         // 按时间戳排序，近的在前
         Collections.sort(list, (m1, m2)-> {
             return m1.getCreateTime().getTime() > m2.getCreateTime().getTime() ? -1 : 1;

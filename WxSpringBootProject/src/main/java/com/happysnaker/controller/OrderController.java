@@ -38,7 +38,7 @@ public class OrderController extends BaseController {
 
     @GetMapping(value = "/get_user_orders")
     String getUserOrders(HttpServletRequest request, HttpServletResponse response) {
-        var ans = service.getUserOrders(request.getParameter(USER_ID_PARAM));
+        String ans = service.getUserOrders(request.getParameter(USER_ID_PARAM));
         return ans == null ? error(response) : ans;
     }
 

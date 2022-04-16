@@ -53,7 +53,7 @@ public class HighConcurrencyPlaceOrderStrategy extends AbstractPlaceOrderStrateg
 
     public boolean checkStock(Map<Integer, Integer> m, int storeId) {
         try {
-            for (var it : m.entrySet()) {
+            for (Map.Entry<Integer, Integer> it : m.entrySet()) {
                 int id = it.getKey(), stock = it.getValue();
                 if ((int) redisManager.getForHash(RedisCacheManager.getDishStockCacheKey(storeId), id) < stock) {
                     return false;
@@ -125,7 +125,7 @@ public class HighConcurrencyPlaceOrderStrategy extends AbstractPlaceOrderStrateg
         boolean hasDeduction = false;
         try {
             // 扣减 redis，发送消息，数据库层面会进行乐观锁判断
-            for (var it : dishNumMap.entrySet()) {
+            for (Map.Entry<Integer, Integer> it : dishNumMap.entrySet()) {
                 int id = it.getKey(), stock = it.getValue();
                 redis.opsForHash().increment(RedisCacheManager.getDishStockCacheKey(order.getStoreId()), id, -stock);
             }
@@ -180,7 +180,7 @@ public class HighConcurrencyPlaceOrderStrategy extends AbstractPlaceOrderStrateg
         boolean hasDeduction = false;
         try {
             // 扣减库存
-            for (var it : dishNumMap.entrySet()) {
+            for (Map.Entry<Integer, Integer> it : dishNumMap.entrySet()) {
                 int id = it.getKey(), stock = it.getValue();
                 redis.opsForHash().increment(
                         RedisCacheManager.getDishStockCacheKey(

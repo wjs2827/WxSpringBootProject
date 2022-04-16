@@ -32,7 +32,7 @@ public abstract class AbstractPlaceOrderStrategy extends BaseService implements 
      */
     public Map<Integer, Integer> getDishNumMap(List<Map<String, Object>> dishOrders) {
         Map<Integer, Integer> m = new HashMap<>(8);
-        for (var map : dishOrders) {
+        for (Map<String, Object> map : dishOrders) {
             int dishId = (int) map.get("dishId");
             int dishNum = (int) map.get("dishNum");
             if (dishId >= 100000) {

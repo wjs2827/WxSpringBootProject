@@ -101,7 +101,7 @@ public class UserServiceImpl extends BaseService implements UserService {
     public String getUsedDiscountCount(String userId) {
         Map<Integer, Map> map = userMapper.queryUserUsedDiscountCountInAllDish(userId);
         JSONObject jsonObject = new JSONObject();
-        for (var it : map.entrySet()) {
+        for (Map.Entry<Integer, Map> it : map.entrySet()) {
             jsonObject.put(String.valueOf(it.getKey()), it.getValue());
         }
         return jsonObject.toJSONString();

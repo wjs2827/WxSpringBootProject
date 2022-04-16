@@ -171,7 +171,7 @@ public class OrderServiceImpl extends BaseService implements OrderService {
      */
     public Map<Integer, Integer> getDishNumMap(List<Map<String, Object>> dishOrders) {
         Map<Integer, Integer> m = new HashMap<>(8);
-        for (var map : dishOrders) {
+        for (Map<String, Object> map : dishOrders) {
             int dishId = (int) map.get("dishId");
             int dishNum = (int) map.get("dishNum");
             if (dishId >= 100000) {
@@ -189,7 +189,7 @@ public class OrderServiceImpl extends BaseService implements OrderService {
 
     private boolean checkStock(Map<Integer, Integer> m, int storeId) {
         try {
-            for (var it : m.entrySet()) {
+            for (Map.Entry<Integer, Integer> it : m.entrySet()) {
                 int id = it.getKey(), stock = it.getValue();
                 if ((int) redisManager.getForHash(RedisCacheManager.getDishStockCacheKey(storeId), id) < stock) {
                     return false;
@@ -279,7 +279,7 @@ public class OrderServiceImpl extends BaseService implements OrderService {
 
     private List<Map<String, Object>> getDishOrders(ShoppingCart cart) {
         List<Map<String, Object>> dishOrders = new ArrayList<>();
-        for (var it : cart.getDishOrders().entrySet()) {
+        for (Map.Entry<String, ShoppingCart.DishOrder> it : cart.getDishOrders().entrySet()) {
             Map<String, Object> dishOrder = new HashMap<>();
             dishOrder.put("dishId", Integer.parseInt(it.getKey()));
             dishOrder.put("dishNum", it.getValue().getNum());
@@ -288,7 +288,7 @@ public class OrderServiceImpl extends BaseService implements OrderService {
             dishOrder.put("dishName", it.getValue().getName());
             dishOrders.add(dishOrder);
         }
-        for (var it : cart.getNewDishOrders().entrySet()) {
+        for (Map.Entry<String, ShoppingCart.DishOrder> it : cart.getNewDishOrders().entrySet()) {
             Map<String, Object> dishOrder = new HashMap<>();
             dishOrder.put("dishId", Integer.parseInt(it.getKey()));
             dishOrder.put("dishNum", it.getValue().getNum());
@@ -361,7 +361,7 @@ public class OrderServiceImpl extends BaseService implements OrderService {
         boolean hasDeduction = false;
         try {
             // 扣减 redis，发送消息，数据库层面会进行乐观锁判断
-            for (var it : m.entrySet()) {
+            for (Map.Entry<Integer, Integer> it : m.entrySet()) {
                 int id = it.getKey(), stock = it.getValue();
                 redis.opsForHash().increment(RedisCacheManager.getDishStockCacheKey(order.getStoreId()), id, -stock);
             }
@@ -419,7 +419,7 @@ public class OrderServiceImpl extends BaseService implements OrderService {
         boolean hasDeduction = false;
         try {
             // 扣减库存
-            for (var it : m.entrySet()) {
+            for (Map.Entry<Integer, Integer> it : m.entrySet()) {
                 int id = it.getKey(), stock = it.getValue();
                 redis.opsForHash().increment(RedisCacheManager.getDishStockCacheKey(order.getStoreId()), id, -stock);
             }
